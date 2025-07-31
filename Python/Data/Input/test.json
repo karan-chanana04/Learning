@@ -1,0 +1,279 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Zapier AI Actions for GPT (Dynamic)",
+    "version": "1.0.0",
+    "description": "Equip GPTs with the ability to run thousands of actions via Zapier. (703dcca4c2e24c5ea5e2c717eba11029)",
+    "x-openai-verification-token": "703dcca4c2e24c5ea5e2c717eba11029"
+  },
+  "servers": [{ "url": "https://actions.zapier.com" }],
+  "paths": {
+    "/gpt/api/v1/available/": {
+      "get": {
+        "operationId": "list_available_actions",
+        "summary": "List Available Actions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "apps",
+            "schema": {
+              "description": "Optional comma-separated list of app names to filter the available actions.",
+              "title": "Apps",
+              "type": "string"
+            },
+            "required": false,
+            "description": "Optional comma-separated list of app names to filter the available actions."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailableActionResponseSchema"
+                }
+              }
+            }
+          }
+        },
+        "description": "List all the currently available actions for the user. If you try to run an action and receive an error\nthat it does not exist, try refreshing this list first.",
+        "security": [{ "AccessPointOAuth": [] }]
+      }
+    },
+    "/gpt/api/v1/available/{available_action_id}/run/": {
+      "post": {
+        "operationId": "run_action",
+        "summary": "Run Action",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "available_action_id",
+            "schema": {
+              "description": "The ID of the action to execute.",
+              "title": "Available Action Id",
+              "type": "string"
+            },
+            "required": true,
+            "description": "The ID of the action to execute."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RunResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        },
+        "description": "Run an available action. The request body should contain `instructions` and optionally `preview_only`.\nAll other action-specific parameters must be placed within the `params_hints` object in the request body.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RunRequest" }
+            }
+          },
+          "required": true
+        },
+        "security": [{ "AccessPointOAuth": [] }]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AvailableActionResponseSchema": {
+        "properties": {
+          "results": {
+            "items": { "$ref": "#/components/schemas/AvailableActionSchema" },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": ["results"],
+        "title": "AvailableActionResponseSchema",
+        "type": "object"
+      },
+      "AvailableActionSchema": {
+        "properties": {
+          "id": {
+            "description": "The unique ID of the available action.",
+            "title": "Id",
+            "type": "string"
+          },
+          "operation_id": {
+            "description": "The operation ID of the available action.",
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "description": {
+            "description": "Description of the action.",
+            "title": "Description",
+            "type": "string"
+          },
+          "params": {
+            "description": "Available hint fields for the action.",
+            "title": "Params",
+            "type": "object"
+          },
+          "configuration_link": {
+            "description": "Guide the user to setup new actions with the configuration_link. You can optionally add ?setup_action=... onto configuration_link to set up a specific Zapier app and action. For example: https://actions.zapier.com/gpt/start?setup_action=gmail find email",
+            "title": "Configuration Link",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "operation_id",
+          "description",
+          "params",
+          "configuration_link"
+        ],
+        "title": "AvailableActionSchema",
+        "type": "object"
+      },
+      "RunResponse": {
+        "description": "This is a summary of the results given the action that was run.",
+        "properties": {
+          "id": {
+            "description": "The id of the run log.",
+            "title": "Id",
+            "type": "string"
+          },
+          "action_used": {
+            "description": "The name of the action that was run.",
+            "title": "Action Used",
+            "type": "string"
+          },
+          "input_params": {
+            "description": "The params we used / will use to run the action.",
+            "title": "Input Params",
+            "type": "object"
+          },
+          "review_url": {
+            "description": "The URL to run the action or review the AI choices the AI made for input_params given instructions.",
+            "title": "Review Url",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [{ "type": "object" }, { "type": "null" }],
+            "description": "A trimmed down result of the first item of the full results. Ideal for humans and language models!",
+            "title": "Result"
+          },
+          "additional_results": {
+            "description": "The rest of the full results. Always returns an array of objects",
+            "items": { "type": "object" },
+            "title": "Additional Results",
+            "type": "array"
+          },
+          "result_field_labels": {
+            "anyOf": [{ "type": "object" }, { "type": "null" }],
+            "description": "Human readable labels for some of the keys in the result.",
+            "title": "Result Field Labels"
+          },
+          "status": {
+            "default": "success",
+            "description": "The status of the action run.",
+            "enum": ["success", "error", "empty", "preview"],
+            "title": "Status",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "description": "The error message if the action run failed.",
+            "title": "Error"
+          },
+          "assistant_hint": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "description": "A hint for the assistant on what to do next.",
+            "title": "Assistant Hint"
+          },
+          "full_results": {
+            "description": "The full results, not summarized, if available. Always returns an array of objects.",
+            "items": { "type": "object" },
+            "title": "Full Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "action_used",
+          "input_params",
+          "review_url",
+          "additional_results",
+          "full_results"
+        ],
+        "title": "RunResponse",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "additionalProperties": true,
+        "properties": {
+          "error": {
+            "description": "Error message.",
+            "title": "Error",
+            "type": "string"
+          }
+        },
+        "required": ["error"],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "RunRequest": {
+        "additionalProperties": true,
+        "description": "Try and stuff as much relevant information into the instructions as possible.\nSet any necessary AvailableActionSchema params within the `params_hints` object.",
+        "properties": {
+          "instructions": {
+            "description": "Plain English instructions. Provide as much detail as possible.",
+            "title": "Instructions",
+            "type": "string"
+          },
+          "params_hints": {
+            "description": "Hints about action-specific parameters.",
+            "properties": {},
+            "title": "Params Hints",
+            "type": "object"
+          },
+          "preview_only": {
+            "default": false,
+            "description": "If true, return a preview instead of executing the action.",
+            "title": "Preview Only",
+            "type": "boolean"
+          }
+        },
+        "required": ["instructions"],
+        "title": "RunRequest",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "AccessPointOAuth": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "/oauth/authorize/",
+            "tokenUrl": "/oauth/token/",
+            "scopes": {
+              "nla:exposed_actions:execute": "Run AI Actions",
+              "openid": "OpenID Connect scope",
+              "claudeai": "Let Claude run actions",
+              "profile": "Profile",
+              "email": "Email"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
