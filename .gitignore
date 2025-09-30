@@ -62,3 +62,7 @@ Thumbs.db
 
 # Generated data
 *.gnv
+
+ Notebook/*.csv
+ Notebook/amazon_chroma_db/
+ Notebook/chroma_db/
